@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hit the Budger</title>
+  <meta charset="utf-8">
+  <script
+            type="text/javascript"
+            src="https://code.jquery.com/jquery-3.4.1.js"
+            integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
+            crossorigin="anonymous"></script>
+  <style>
+    .info {
+        border: 5px solid black;
+        width: 550px;
+        height: 550px;
+        text-align: center;
+    }
+    .info-text {
+        font-size: 24px;
+        margin: 12px;
+    }
+    .btn {
+        background-color: green;
+        border: none;
+        color: white;
+        padding: 12px 24px;
+        font-size: 20px;
+        border-radius: 12px;
+        display: inline-block;
+    }
+    #btn_start {
+        margin-top: 40px;
+    }
+    #btn_save {
+        background-color: blue;
+        margin-top: 20px;
+    }
+    #btn_load {
+        background-color: red;
+        margin: 20px;
+    }
+    #btn_submit {
+        background-color: blue;
+        margin: 20px;
+    }
+    .top_line {
+      /*border: 2px solid green;*/
+      height: 180px;
+      width: 530px;
+      z-index: 1;
+    }
+    .middle_line {
+      /*border: 2px solid blue;*/
+      height: 180px;
+      width: 530px;
+    }
+    .bottom_line {
+      /*border: 2px solid red;*/
+      height: 180px;
+      width: 530px;
+    }
+    #b {
+      position: relative;
+      left: 340px;
+      z-index: 1;
+      /*border: 2px solid black;*/
+    }
+    #sc_counter {
+        border: 5px solid black;
+        background: white;
+        position: absolute;
+        top: 8px;
+        left: 440px;
+        z-index: 10;
+        font-size: 25px;
+    }
+    #lv_counter {
+        border: 5px solid black;
+        background: white;
+        position: absolute;
+        top: 40px;
+        left: 440px;
+        z-index: 10;
+        font-size: 25px;
+    }
+    #lvl_counter {
+        border: 5px solid black;
+        background: white;
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        z-index: 10;
+        font-size: 25px;
+    }
+    #badger {
+        z-index: 1;
+    }
+    #b_counter {
+        display: none;
+    }
+  </style>
+  <script type="text/javascript">
+
+    $(document).ready( function() {
+        "use strict";
+
+        // These variable track the state of the game
+        var level = 1;
+        var score = 0;
+        var lives = 3;
+
+        var message = {
+            messageType: "SETTING",
+            options: {
+                "width": 580, //Integer
+                "height": 580 //Integer
+            }
+        };
+        window.parent.postMessage(message, "*");
+
+        // Simulates a playable game level
+        $("#btn_start").click( function () {
+            startLevel(score, level, lives);
+        })
+
+        $( "#btn_load ").click( function() {    
+            var msg = {
+                "messageType": "LOAD_REQUEST",
+            };
+            window.parent.postMessage(msg, "*");
+        });
+
+        window.addEventListener("message", function(evt) {
+            if(evt.data.messageType === "LOAD") {
+                var gameState = evt.data.gameState;
+                level         = gameState.level;
+                score         = gameState.score;
+                lives         = gameState.lives;
+                // console.log(`gameState: level - ${gameState.level}, score - ${gameState.score}, lives - ${gameState.lives}`)
+                // console.log(`got: level - ${level}, score - ${score}, lives - ${lives}`)
+                alert("Game was successfully loaded!")
+                winLevel(level, score, lives);
+            } else if (evt.data.messageType === "ERROR") {
+                alert(evt.data.info);
+            }
+        });
+
+    });
+
+    function startLevel(score, level, lives) {
+
+        document.body.innerHTML = '';
+
+        var delay = 300/(level/10);
+        var counter = 0;
+
+        var top = document.createElement("div");
+        top.setAttribute("class", "top_line");
+        document.body.appendChild(top);
+
+        var middle = document.createElement("div");
+        middle.setAttribute("class", "middle_line");
+        document.body.appendChild(middle); 
+
+        var bottom = document.createElement("div");
+        bottom.setAttribute("class", "bottom_line");
+        document.body.appendChild(bottom); 
+
+        var scores_counter = document.createElement("div");
+        scores_counter.setAttribute("id", "sc_counter");
+        document.body.appendChild(scores_counter);
+
+        var lives_counter = document.createElement("div");
+        lives_counter.setAttribute("id", "lv_counter");
+        document.body.appendChild(lives_counter);
+
+        var level_counter = document.createElement("div");
+        level_counter.setAttribute("id", "lvl_counter");
+        document.body.appendChild(level_counter);
+
+        var counterB = document.createElement("div");
+        counterB.setAttribute("id", "b_counter");
+        document.body.appendChild(counterB);
+
+        create_Badger(); 
+
+        $("#sc_counter")
+                .text(`Score: ${score}`);
+        $("#lv_counter")
+                .text(`Lives: ${lives}`);
+        $("#lvl_counter")
+                .text(`Level: ${level}`);
+        $("#b_counter")
+                .text(`${counter}`);   
+
+        function create_Badger() {
+
+            var x = Math.floor(Math.random() * 3);
+            var y = Math.floor(Math.random() * 3);
+            
+            if (y == 0) {
+                $( ".top_line" ).append( "<span id='b'></span>" );
+            } else if (y == 1) {
+                $( ".middle_line" ).append( "<span id='b'></span>" );
+            } else {
+                $( ".bottom_line" ).append( "<span id='b'></span>" );
+            }
+
+            $( "#b" )
+                .append( "<img src='https://i.ibb.co/C22XBdd/badger.png' id='badger'></img>" )
+                .css("left", x*170);
+
+            var tick = setTimeout(function() { 
+                
+                counter += 1;
+
+                if (counter < 5*(level)) {    
+                    lives -= 1;
+                    if (lives > 0) {
+                        $("#lv_counter").text(`Lives: ${lives}`);
+                        $("#b_counter").text(`${counter}`);
+                        refresh_badger();
+                    } else {
+                        clearTimeout(tick);
+                        loseGame(score);
+                    }
+                } else {
+                    winLevel(level, score, lives);
+                }
+
+            }, delay);
+
+            $( "#badger" ).click(function(e) {
+
+                clearTimeout(tick);
+                counter += 1;
+                score += 1;
+
+                if (counter < 5*(level)) {    
+                    refresh_badger();
+                    $("#sc_counter").text(`Score: ${score}`);
+                    $("#b_counter").text(`${counter}`);
+                } else {
+                    winLevel(level, score, lives);
+                }
+            });
+
+            function refresh_badger() {
+                $("#b").off().remove();
+                var hold = setTimeout(() => create_Badger(), 10);
+            }
+        };
+    }
+
+    function loseGame(score) {
+        document.body.innerHTML = '';
+
+        var form = document.createElement("div");
+        form.setAttribute("id", "form_lose");
+        form.setAttribute("class", "info");
+        document.body.appendChild(form);
+
+        $( "#form_lose" ).append("<div id='lb_lose' class='info-text'></div>");
+        $( "#form_lose" ).append("<div id='lb_score' class='info-text'></div>");
+        $( "#form_lose" ).append("<button id='btn_submit' class='btn'></button><br>");
+
+        $( "#lb_lose" ).text("You lose!");
+        $( "#lb_score" ).text(`Your final score is: ${score}`);
+        $( "#btn_submit" ).text("Submit your score!");
+
+        $( "#btn_submit" ).click(function() {
+            var msg = {
+                "messageType": "SCORE",
+                "score": score
+            };
+            window.parent.postMessage(msg, "*");
+            
+            alert("Your score was successfully submitted!");
+            window.location.reload(false); 
+        });
+    }
+
+    function winLevel(level, score, lives) {
+
+        document.body.innerHTML = '';
+
+        var form = document.createElement("div");
+        form.setAttribute("id", "form_win");
+        form.setAttribute("class", "info");
+        document.body.appendChild(form);
+
+        $( "#form_win" ).append("<div id='lb_win_lv' class='info-text'></div>");
+        $( "#form_win" ).append("<div id='lb_win_lv_stat' class='info-text'></div>");
+        $( "#form_win" ).append("<button id='btn_start' class='btn'></button><br>");
+        $( "#form_win" ).append("<button id='btn_save' class='btn'></button>");
+
+        $( "#lb_win_lv" ).text(`You won the level ${level}!`);
+        $( "#lb_win_lv_stat" ).text(`Your score is ${score} and you have ${lives} lives!`);
+        $( "#btn_start" ).text("Continue");
+        $( "#btn_save" ).text("Save progress");
+
+        $( "#btn_start" ).click(function() {
+            level += 1;
+            lives += 3;
+            startLevel(score, level, lives)
+        });
+        $( "#btn_save" ).click(function() {
+            var msg = {
+                "messageType": "SAVE",
+                "gameState": {
+                    "level": level,
+                    "score": score,
+                    "lives": lives
+                }
+            };
+            window.parent.postMessage(msg, "*");
+            // alert("Your progress was successfully saved!")
+        });
+    }
+
+  </script>
+</head>
+
+<body>
+    <div class="info">
+        <h1>Hit the Badger!</h1>
+        <button id="btn_start" class="btn">Start!</button><br>
+        <button id="btn_load" class="btn">Load</button>
+    </div>
+</body></html>
